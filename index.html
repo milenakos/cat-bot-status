@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=3.0" name="viewport" />
+    <title>Cat Bot Status</title>
+    <style>
+        .data-box {
+            width: 32px;
+            height: 32px;
+            display: inline-block;
+            margin: 5px;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 22px;
+            position: relative;
+            text-align: center;
+            color: white;
+        }
+        .tooltip {
+            display: none;
+            position: absolute;
+            background-color: #00000080;
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+            z-index: 10;
+            top: 115%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        .data-box:hover .tooltip {
+            display: block;
+        }
+        .data-container {
+            max-width: 1280px;
+        }
+        .data-box.change {
+            animation: changeAnimation 0.5s forwards;
+        }
+        @keyframes changeAnimation {
+            0% {
+                filter: brightness(1);
+            }
+            50% {
+                filter: brightness(0.7);
+            }
+            100% {
+                filter: brightness(1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <center>
+        <h1>cat bot shards</h1>
+        <br>
+
+        <input type="text" id="guild-id-input" placeholder="enter server id..." />
+        <input type="number" id="num-shards-input" min="1" style="display: none;"/>
+        <div id="shard-result"></div>
+        <br>
+
+        <div style="display:inline">
+            <span style="color:green">ok</span>
+            <span style="color:black">disconnected</span>
+            <span style="color:orange">logging in</span>
+            <span style="color:blue">reconnecting</span>
+            <span style="color:red">dead</span>
+            <span style="color:gray">unknown</span>
+        </div>
+        <br><br>
+
+        <div id="last-update"></div>
+        <div id="data-container" class="data-container"></div>
+        <br>
+
+        <div id="stats">
+            <div id="average-ping"></div>
+            <div id="total-guilds"></div>
+        </div>
+    </center>
+<script>
+function computeShardId() {
+    const guildStr = document.getElementById('guild-id-input').value.trim();
+    const shardsStr = document.getElementById('num-shards-input').value.trim();
+    let out = '';
+
+    if (guildStr && shardsStr) {
+        try {
+            const guildId = BigInt(guildStr);
+            const numShards = BigInt(shardsStr);
+            const shardId = (guildId >> 22n) % numShards;
+            out = `Shard ID: ${shardId.toString()}`;
+        } catch {
+            out = 'Invalid input.';
+        }
+    }
+
+    document.getElementById('shard-result').textContent = out;
+};
+
+document.getElementById('guild-id-input').addEventListener('blur', computeShardId);
+
+const socket = new WebSocket('wss://shards.minkos.lol/');
+
+socket.onopen = function() {
+    console.log('WebSocket Client Connected');
+    socket.send('Hello, Server!');
+};
+
+socket.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    const container = document.getElementById('data-container');
+    container.innerHTML = ''; // Clear previous data
+    console.log('new data');
+
+    let totalPing = 0;
+    let totalGuilds = 0;
+    let count = 0;
+
+    for (const key in data) {
+        if (data.hasOwnProperty(key)) {
+            const entry = data[key];
+            const box = document.createElement('div');
+            box.className = 'data-box';
+            box.textContent = key;
+
+            totalPing += entry.ping;
+            totalGuilds += entry.guilds;
+            count++;
+
+            switch (entry.status) {
+                case 4:
+                    box.style.backgroundColor = 'green';
+                    break;
+                case 3:
+                    box.style.backgroundColor = 'black';
+                    break;
+                case 2:
+                    box.style.backgroundColor = 'orange';
+                    break;
+                case 1:
+                    box.style.backgroundColor = 'blue';
+                    break;
+                case 0:
+                    box.style.backgroundColor = 'red';
+                    break;
+                default:
+                    box.style.backgroundColor = 'gray';
+            }
+
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            tooltip.textContent = `${entry.ping}ms, ${entry.guilds} servers`;
+            box.appendChild(tooltip);
+
+            if (entry.change) {
+                box.classList.add('change');
+            }
+
+            container.appendChild(box);
+        }
+    }
+    const averagePing = count > 0 ? (totalPing / count).toFixed(2) : 'N/A';
+    const totalGuildsText = totalGuilds > 0 ? totalGuilds : 'N/A';
+    document.getElementById('average-ping').textContent = `Average Ping: ${averagePing}ms`;
+    document.getElementById('total-guilds').textContent = `Total Servers: ${totalGuildsText}`;
+
+    if (count > 0) {
+        document.getElementById('num-shards-input').value = count;
+    }
+
+    const lastUpdate = document.getElementById('last-update');
+    const currentTime = new Date().toLocaleTimeString();
+    lastUpdate.textContent = `Last Update: ${currentTime}`;
+};
+</script>
+</body>
+
+</html>
