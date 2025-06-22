@@ -180,12 +180,12 @@ socket.onmessage = function(event) {
     const totalGuildsText = totalGuilds > 0 ? totalGuilds : 'N/A';
     document.getElementById('average-ping').textContent = `Average Ping: ${averagePing}ms`;
     document.getElementById('total-guilds').textContent = `Total Servers: ${totalGuildsText}`;
-    document.getElementById('ok').value = count_ok
-    document.getElementById('disconnected').value = count_disconnected
-    document.getElementById('logging-in').value = count_logging_in
-    document.getElementById('reconnecting').value = count_reconnecting
-    document.getElementById('dead').value = count_dead
-    document.getElementById('unknown').value = count_unknown
+    document.getElementById('ok').value = ${count_ok};
+    document.getElementById('disconnected').value = ${count_disconnected};
+    document.getElementById('logging-in').value = ${count_logging_in};
+    document.getElementById('reconnecting').value = ${count_reconnecting};
+    document.getElementById('dead').value = ${count_dead};
+    document.getElementById('unknown').value = ${count_unknown};
 
     if (count > 0) {
         document.getElementById('num-shards-input').value = count;
