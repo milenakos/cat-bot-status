@@ -64,12 +64,12 @@
         <br>
 
         <div style="display:inline">
-            <span style="color:green">ok</span>
-            <span style="color:black">disconnected</span>
-            <span style="color:orange">logging in</span>
-            <span style="color:blue">reconnecting</span>
-            <span style="color:red">dead</span>
-            <span style="color:gray">unknown</span>
+            <span style="color:green">ok: <div id="ok"></div></span>
+            <span style="color:black">disconnected: <div id="disconnected"></div></span>
+            <span style="color:orange">logging in: <div id="logging-in"></div></span>
+            <span style="color:blue">reconnecting: <div id="reconnecting"></div></span>
+            <span style="color:red">dead: <div id="dead"></div></span>
+            <span style="color:gray">unknown: <div id="unknown"></div></span>
         </div>
         <br><br>
 
@@ -120,6 +120,12 @@ socket.onmessage = function(event) {
     let totalPing = 0;
     let totalGuilds = 0;
     let count = 0;
+    let count_ok = 0;
+    let count_disconnected = 0;
+    let count_logging_in = 0;
+    let count_reconnecting = 0;
+    let count_dead = 0;
+    let count_unknown = 0;
 
     for (const key in data) {
         if (data.hasOwnProperty(key)) {
@@ -135,21 +141,27 @@ socket.onmessage = function(event) {
             switch (entry.status) {
                 case 4:
                     box.style.backgroundColor = 'green';
+                    count_ok++;
                     break;
                 case 3:
                     box.style.backgroundColor = 'black';
+                    count_disconnected++;
                     break;
                 case 2:
                     box.style.backgroundColor = 'orange';
+                    count_logging_in++;
                     break;
                 case 1:
                     box.style.backgroundColor = 'blue';
+                    count_reconnecting++;
                     break;
                 case 0:
                     box.style.backgroundColor = 'red';
+                    count_dead++;
                     break;
                 default:
                     box.style.backgroundColor = 'gray';
+                    count_unknown++;
             }
 
             const tooltip = document.createElement('div');
@@ -168,6 +180,12 @@ socket.onmessage = function(event) {
     const totalGuildsText = totalGuilds > 0 ? totalGuilds : 'N/A';
     document.getElementById('average-ping').textContent = `Average Ping: ${averagePing}ms`;
     document.getElementById('total-guilds').textContent = `Total Servers: ${totalGuildsText}`;
+    document.getElementById('ok').value = count_ok
+    document.getElementById('disconnected').value = count_disconnected
+    document.getElementById('logging-in').value = count_logging_in
+    document.getElementById('reconnecting').value = count_reconnecting
+    document.getElementById('dead').value = count_dead
+    document.getElementById('unknown').value = count_unknown
 
     if (count > 0) {
         document.getElementById('num-shards-input').value = count;
@@ -176,6 +194,7 @@ socket.onmessage = function(event) {
     const lastUpdate = document.getElementById('last-update');
     const currentTime = new Date().toLocaleTimeString();
     lastUpdate.textContent = `Last Update: ${currentTime}`;
+    
 };
 </script>
 </body>
