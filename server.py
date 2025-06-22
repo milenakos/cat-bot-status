@@ -50,7 +50,7 @@ async def process_text(rawa):
             if values["gateway_shard_status_count"] - 1 == last_count:
                 shard_data["status"] = int(values["gateway_shard_status_sum"] - last_sum)
             else:
-                shard_data["status"] = last.get("status", 4)
+                shard_data["status"] = last.get("status", -1)
         else:
             shard_data["state"] = -1
         last_state_counts[shard] = values["gateway_shard_status_count"]
