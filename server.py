@@ -4,8 +4,6 @@ import time
 import json
 import websockets
 
-last_state_sums = {}
-last_state_counts = {}
 last_data = {}
 connected_clients = set()
 
@@ -16,11 +14,11 @@ async def broadcast_data(data):
         await asyncio.gather(*send_tasks)
 
 async def process_text(rawa):
-    global last_data, last_state_counts, last_state_sums
+    global last_data
     data = {}
     for line in rawa.split("\n"):
         good = False
-        for i in ["gateway_shard_latency{", "gateway_cache_guilds{", "gateway_shard_status_sum{", "gateway_shard_status_count{"]:
+        for i in ["gateway_shard_latency{", "gateway_cache_guilds{", "gateway_shard_status{"]:
             if i in line:
                 good = True
                 break
@@ -44,17 +42,7 @@ async def process_text(rawa):
         shard_data = {}
         shard_data["ping"] = round(values["gateway_shard_latency"] * 1000, 2) or last.get("ping", 0)
         shard_data["guilds"] = int(values["gateway_cache_guilds"]) or last.get("guilds", 0)
-        if shard in last_state_counts and shard in last_state_sums:
-            last_count = last_state_counts[shard]
-            last_sum = last_state_sums[shard]
-            if values["gateway_shard_status_count"] - 1 == last_count:
-                shard_data["status"] = int(values["gateway_shard_status_sum"] - last_sum)
-            else:
-                shard_data["status"] = last.get("status", -1)
-        else:
-            shard_data["state"] = -1
-        last_state_counts[shard] = values["gateway_shard_status_count"]
-        last_state_sums[shard] = values["gateway_shard_status_sum"]
+        shard_data["status"] = int(values["gateway_shard_status"]) or last.get("status", -1)
         shard_data["change"] = shard_data != last
         clean_data[shard] = shard_data
     result = {key: clean_data[key] for key in sorted(clean_data)}
@@ -70,7 +58,7 @@ async def background_task():
             async with session.get("http://localhost:7878/metrics") as response:
                 await process_text(await response.text())
             elapsed_time = time.time() - start_time
-            await asyncio.sleep(max(0, 0.9 - elapsed_time))
+            await asyncio.sleep(0.04)
 
 async def echo(websocket):
     connected_clients.add(websocket)
