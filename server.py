@@ -40,15 +40,16 @@ async def process_text(rawa):
     for shard, values in data.items():
         last = last_data.get(shard, {})
         shard_data = {}
-        shard_data["ping"] = round(values["gateway_shard_latency"] * 1000, 2) or last.get("ping", 0)
         shard_data["guilds"] = int(values["gateway_cache_guilds"]) or last.get("guilds", 0)
         shard_data["status"] = int(values["gateway_shard_status"]) or last.get("status", -1)
         shard_data["change"] = shard_data != last
+        shard_data["ping"] = round(values["gateway_shard_latency"] * 1000, 2) or last.get("ping", 0)
         clean_data[shard] = shard_data
     result = {key: clean_data[key] for key in sorted(clean_data)}
     await broadcast_data(result)
     for key in result:
         result[key].pop('change', None)
+        result[key].pop('ping', None)
     last_data = result
 
 async def background_task():
@@ -58,7 +59,7 @@ async def background_task():
             async with session.get("http://localhost:7878/metrics") as response:
                 await process_text(await response.text())
             elapsed_time = time.time() - start_time
-            await asyncio.sleep(0.04)
+            await asyncio.sleep(0.2 - elapsed_time)
 
 async def echo(websocket):
     connected_clients.add(websocket)
