@@ -8,7 +8,9 @@
         .data-box {
             width: 32px;
             height: 32px;
-            display: inline-block;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
             margin: 5px;
             padding: 10px;
             border-radius: 5px;
@@ -101,79 +103,95 @@ function computeShardId() {
 
 document.getElementById('guild-id-input').addEventListener('blur', computeShardId);
 
-const socket = new WebSocket('wss://shards.minkos.lol/');
+const socketUrl = 'wss://shards.minkos.lol/';
+let socket;
+let reconnectInterval = 1000;
 
-socket.onopen = function() {
-    console.log('WebSocket Client Connected');
-    socket.send('Hello, Server!');
-};
+function connect() {
+    socket = new WebSocket(socketUrl);
 
-socket.onmessage = function(event) {
-    const data = JSON.parse(event.data);
-    const container = document.getElementById('data-container');
-    container.innerHTML = ''; // Clear previous data
-    console.log('new data');
+    socket.onopen = function() {
+        console.log('WebSocket Client Connected');
+        socket.send('Hello, Server!');
+    };
 
-    let totalPing = 0;
-    let totalGuilds = 0;
-    let count = 0;
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        const container = document.getElementById('data-container');
+        container.innerHTML = '';
+        console.log('new data');
 
-    for (const key in data) {
-        if (data.hasOwnProperty(key)) {
-            const entry = data[key];
-            const box = document.createElement('div');
-            box.className = 'data-box';
-            box.textContent = key;
+        let totalPing = 0;
+        let totalGuilds = 0;
+        let count = 0;
 
-            totalPing += entry.ping;
-            totalGuilds += entry.guilds;
-            count++;
+        for (const key in data) {
+            if (data.hasOwnProperty(key)) {
+                const entry = data[key];
+                const box = document.createElement('div');
+                box.className = 'data-box';
+                box.textContent = key;
 
-            switch (entry.status) {
-                case 4:
-                    box.style.backgroundColor = 'green';
-                    break;
-                case 3:
-                    box.style.backgroundColor = 'black';
-                    break;
-                case 2:
-                    box.style.backgroundColor = 'orange';
-                    break;
-                case 1:
-                    box.style.backgroundColor = 'blue';
-                    break;
-                case 0:
-                    box.style.backgroundColor = 'red';
-                    break;
-                default:
-                    box.style.backgroundColor = 'gray';
+                totalPing += entry.ping;
+                totalGuilds += entry.guilds;
+                count++;
+
+                switch (entry.status) {
+                    case 4:
+                        box.style.backgroundColor = 'green';
+                        break;
+                    case 3:
+                        box.style.backgroundColor = 'black';
+                        break;
+                    case 2:
+                        box.style.backgroundColor = 'orange';
+                        break;
+                    case 1:
+                        box.style.backgroundColor = 'blue';
+                        break;
+                    case 0:
+                        box.style.backgroundColor = 'red';
+                        break;
+                    default:
+                        box.style.backgroundColor = 'gray';
+                }
+
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.textContent = `${entry.ping}ms, ${entry.guilds} servers`;
+                box.appendChild(tooltip);
+
+                if (entry.change) {
+                    box.classList.add('change');
+                }
+
+                container.appendChild(box);
             }
-
-            const tooltip = document.createElement('div');
-            tooltip.className = 'tooltip';
-            tooltip.textContent = `${entry.ping}ms, ${entry.guilds} servers`;
-            box.appendChild(tooltip);
-
-            if (entry.change) {
-                box.classList.add('change');
-            }
-
-            container.appendChild(box);
         }
-    }
-    const averagePing = count > 0 ? (totalPing / count).toFixed(2) : 'N/A';
-    const totalGuildsText = totalGuilds > 0 ? totalGuilds : 'N/A';
-    document.getElementById('average-ping').textContent = `Average Ping: ${averagePing}ms`;
-    document.getElementById('total-guilds').textContent = `Total Servers: ${totalGuildsText}`;
+        const averagePing = count > 0 ? (totalPing / count).toFixed(2) : 'N/A';
+        const totalGuildsText = totalGuilds > 0 ? totalGuilds : 'N/A';
+        document.getElementById('average-ping').textContent = `Average Ping: ${averagePing}ms`;
+        document.getElementById('total-guilds').textContent = `Total Servers: ${totalGuildsText}`;
 
-    if (count > 0) {
-        document.getElementById('num-shards-input').value = count;
-    }
+        if (count > 0) {
+            document.getElementById('num-shards-input').value = count;
+        }
 
-    const lastUpdate = document.getElementById('last-update');
-    const currentTime = new Date().toLocaleTimeString();
-    lastUpdate.textContent = `Last Update: ${currentTime}`;
-};
+        const lastUpdate = document.getElementById('last-update');
+        const currentTime = new Date().toLocaleTimeString();
+        lastUpdate.textContent = `Last Update: ${currentTime}`;
+    };
+
+    socket.onclose = function() {
+        console.log('WebSocket Client Disconnected. Attempting to reconnect...');
+        setTimeout(connect, reconnectInterval);
+    };
+
+    socket.onerror = function(error) {
+        console.error('WebSocket Error: ', error);
+    };
+}
+connect();
 </script>
 </body>
 
