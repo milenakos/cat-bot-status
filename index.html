@@ -38,6 +38,14 @@
         .data-container {
             max-width: 1000px;
         }
+        .cluster-header {
+            display: block;
+            width: 100%;
+            text-align: center;
+            font-weight: bold;
+            margin: 12px 0 4px;
+            padding-left: 5px;
+        }
         .data-box.change {
             animation: changeAnimation 0.2s forwards;
         }
@@ -129,9 +137,29 @@ function connect() {
         let totalGuilds = 0;
         let count = 0;
 
+        const TOTAL_CLUSTERS = 16;
+        const totalShards = Object.keys(data).length;
+        const shardsPerCluster = totalShards / TOTAL_CLUSTERS;
+
+        let betaCluster = -1;
+        if (shardsPerCluster > 0) {
+            const betaShard = Number((966586000417619998n >> 22n) % BigInt(totalShards));
+            betaCluster = Math.floor(betaShard / shardsPerCluster);
+        }
+
         for (const key in data) {
             if (data.hasOwnProperty(key)) {
                 const entry = data[key];
+
+                const shardNum = Number(key);
+                if (shardsPerCluster > 0 && Number.isInteger(shardNum) && shardNum % shardsPerCluster === 0) {
+                    const clusterNum = shardNum / shardsPerCluster;
+                    const header = document.createElement('div');
+                    header.className = 'cluster-header';
+                    header.textContent = `Cluster ${clusterNum}` + (clusterNum === betaCluster ? ' (beta)' : '');
+                    container.appendChild(header);
+                }
+
                 const box = document.createElement('div');
                 box.className = 'data-box';
                 box.textContent = key;
