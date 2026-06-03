@@ -104,7 +104,8 @@ function computeShardId() {
             const guildId = BigInt(guildStr);
             const numShards = BigInt(shardsStr);
             const shardId = (guildId >> 22n) % numShards;
-            out = `Shard ID: ${shardId.toString()}`;
+            const clusterId = shardId / (numShards / 16n);
+            out = `Shard: ${shardId.toString()}, Cluster: ${clusterId.toString()}`;
         } catch {
             out = 'Invalid input.';
         }
