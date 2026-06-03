@@ -157,7 +157,7 @@ function connect() {
                     const clusterNum = shardNum / shardsPerCluster;
                     const header = document.createElement('div');
                     header.className = 'cluster-header';
-                    header.textContent = `Cluster ${clusterNum}` + (clusterNum === betaCluster ? ' (beta)' : '');
+                    header.textContent = `Cluster ${clusterNum}` + (clusterNum === betaCluster ? ' (experimental)' : '');
                     container.appendChild(header);
                 }
 
