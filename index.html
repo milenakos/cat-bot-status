@@ -6,16 +6,16 @@
     <title>Cat Bot Status</title>
     <style>
         .data-box {
-            width: 32px;
-            height: 32px;
+            box-sizing: border-box;
+            width: 48px;
+            height: 48px;
             display: inline-flex;
             justify-content: center;
             align-items: center;
-            margin: 5px;
-            padding: 10px;
             border-radius: 5px;
             font-size: 22px;
             position: relative;
+            justify-self: center;
             text-align: center;
             color: white;
         }
@@ -36,15 +36,31 @@
             display: block;
         }
         .data-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 290px));
+            justify-content: center;
+            gap: 12px;
             max-width: 1000px;
+            margin: 0 auto;
+            text-align: left;
+        }
+        .cluster-card {
+            box-sizing: border-box;
+            min-width: 0;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
         }
         .cluster-header {
-            display: block;
-            width: 100%;
+            margin: 0 0 6px;
             text-align: center;
             font-weight: bold;
-            margin: 12px 0 4px;
-            padding-left: 5px;
+        }
+        .shard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, 48px);
+            justify-content: center;
+            gap: 6px;
         }
         .data-box.change {
             animation: changeAnimation 0.2s forwards;
@@ -87,6 +103,7 @@
         <br><br>
 
         <div id="last-update"></div>
+        <br>
         <div id="data-container" class="data-container">loading... if this takes more than a few seconds, refresh the page</div>
         <br>
 
@@ -143,6 +160,7 @@ function connect() {
         const TOTAL_CLUSTERS = 16;
         const totalShards = Object.keys(data).length;
         const shardsPerCluster = totalShards / TOTAL_CLUSTERS;
+        const clusterCards = new Map();
 
         let betaCluster = -1;
         if (shardsPerCluster > 0) {
@@ -155,12 +173,22 @@ function connect() {
                 const entry = data[key];
 
                 const shardNum = Number(key);
-                if (shardsPerCluster > 0 && Number.isInteger(shardNum) && shardNum % shardsPerCluster === 0) {
-                    const clusterNum = shardNum / shardsPerCluster;
+                const clusterNum = shardsPerCluster > 0 ? Math.floor(shardNum / shardsPerCluster) : 0;
+                let shardGrid = clusterCards.get(clusterNum);
+                if (!shardGrid) {
+                    const card = document.createElement('section');
+                    card.className = 'cluster-card';
+
                     const header = document.createElement('div');
                     header.className = 'cluster-header';
                     header.textContent = `Cluster ${clusterNum}` + (clusterNum === betaCluster ? ' (experimental)' : '');
-                    container.appendChild(header);
+                    card.appendChild(header);
+
+                    shardGrid = document.createElement('div');
+                    shardGrid.className = 'shard-grid';
+                    card.appendChild(shardGrid);
+                    container.appendChild(card);
+                    clusterCards.set(clusterNum, shardGrid);
                 }
 
                 const box = document.createElement('div');
@@ -200,7 +228,7 @@ function connect() {
                     box.classList.add('change');
                 }
 
-                container.appendChild(box);
+                shardGrid.appendChild(box);
             }
         }
         const averagePing = count > 0 ? (totalPing / count).toFixed(2) : 'N/A';
